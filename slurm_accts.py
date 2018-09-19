@@ -16,6 +16,7 @@ import shlex            # and because subprocess is stupid on python and takes o
 # some constants
 ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end"
 RESULT_DIR = "./logs"
+DEFAULT_SUFFIX = "all"
 
 # business output: partitions + file suffixes
 BUSINESS_OUTPUT = {'pegasus_q,discovery_q,haswell_q': 'std',
@@ -222,8 +223,7 @@ def main():
                                   int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition)
         # execute or print it
         exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(
-            args.endyear), "all", args.resultdir, args.execute)
-
+            args.endyear), DEFAULT_SUFFIX, args.resultdir, args.execute)
 
 
 # Execute main() function
