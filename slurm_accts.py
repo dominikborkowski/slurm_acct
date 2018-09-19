@@ -49,7 +49,7 @@ def get_default_date():
     return (default_date)
 
 
-def get_sacct_cmd(args, sday, smonth, syear, eday, emonth, eyear, fields, partition):
+def get_sacct_cmd(args):
     """Construct sacct command. If end day is > 28 then adjust to last day of that month.
     Arguments:
         sday {int} -- accounting start day of the month
@@ -66,51 +66,51 @@ def get_sacct_cmd(args, sday, smonth, syear, eday, emonth, eyear, fields, partit
 
     # check if end date may not be the actual end of a given end month (28 or later)
     # if not, adjust it
-    if eday >= 28 and eday != calendar.monthrange(eyear, emonth)[1]:
-        logging.debug("Auto adjusting end day from {}".format(eday))
-        eday = str(calendar.monthrange(eyear, emonth)[1]).zfill(2)
+    if int(args.endday) >= 28 and int(args.endday) != calendar.monthrange(int(args.endyear), int(args.endmonth))[1]:
+        logging.debug("Auto adjusting end day from {}".format(int(args.endday)))
+        eday=str(calendar.monthrange(int(args.endyear), int(args.endmonth))[1]).zfill(2)
         logging.debug("Auto adjusting end day to {}".format(eday))
     else:
-        eday = str(eday).zfill(2)
+        eday=str(args.endday).zfill(2)
 
     # pad with zeros our start/end numbers
-    sday = str(sday).zfill(2)
-    smonth = str(smonth).zfill(2)
-    syear = str(syear).zfill(4)
-    emonth = str(emonth).zfill(2)
-    eyear = str(eyear).zfill(4)
+    sday=str(args.endday).zfill(2)
+    smonth=str(args.startmonth).zfill(2)
+    syear=str(args.startyear).zfill(4)
+    emonth=str(args.endmonth).zfill(2)
+    eyear=str(args.endyear).zfill(4)
 
     # construct start and end fields
-    start_str = "-S {0}-{1}-{2}".format(syear, smonth, sday)
-    end_str = "-E {0}-{1}-{2}T23:59:59".format(eyear, emonth, eday)
+    start_str="-S {0}-{1}-{2}".format(syear, smonth, sday)
+    end_str="-E {0}-{1}-{2}T23:59:59".format(eyear, emonth, eday)
 
     # do we have users?
     if args.user:
-        user = "--user=" + args.user
+        user="--user=" + args.user
     else:
-        user = "-a"
+        user="-a"
 
     # do we have clusters?
     if args.cluster:
-        cluster = "--clusters=" + args.cluster
+        cluster="--clusters=" + args.cluster
     else:
-        cluster = "-L"
+        cluster="-L"
 
     # do we have accounts?
     if args.account:
-        account = "--accounts=" + args.account
+        account="--accounts=" + args.account
     else:
-        account = ""
+        account=""
 
     # do we have partitions?
     if args.partition:
-        partition = "--partition=" + args.partition
+        partition="--partition=" + args.partition
     else:
-        partition = ""
+        partition=""
 
     # final command
-    command = (
-        "sacct -XTp {0} {1} {2} {3} {4} {5} -o {6}".format(user, cluster, account, start_str, end_str, partition, fields))
+    command=(
+        "sacct -XTp {0} {1} {2} {3} {4} {5} -o {6}".format(user, cluster, account, start_str, end_str, partition, args.fields))
     # command = command.strip()
     logging.debug("Command: {}".format(command))
     return (command)
@@ -127,17 +127,17 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
         string: -- output of the command
     """
     # construct command with stdout redirection
-    emonth = str(emonth).zfill(2)
-    eyear = str(eyear).zfill(4)
-    command = command + \
+    emonth=str(emonth).zfill(2)
+    eyear=str(eyear).zfill(4)
+    command=command + \
         (" &> {0}/{1}-{2}-HPC-slurm-{3}.txt".format(resultdir, eyear, emonth, suffix))
 
     if execute:
         logging.debug("Executing: {}".format(command))
-        command = shlex.split(command)
+        command=shlex.split(command)
         subprocess.call([command])
         try:
-            output = subprocess.check_output(
+            output=subprocess.check_output(
                 command, stderr=sys.stdout).decode()
             logging.debug(output.decode())
         except subprocess.CalledProcessError as e:
@@ -155,11 +155,11 @@ def get_business_output(args):
     logging.debug("Business output")
 
     for key in BUSINESS_OUTPUT:
-        partition = key
-        suffix = BUSINESS_OUTPUT[key]
+        partition=key
+        suffix=BUSINESS_OUTPUT[key]
         # get a command
-        sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
-                                  int(args.endday), int(args.endmonth), int(args.endyear), args.fields, partition)
+        sacct_cmd = get_sacct_cmd(args)
+
         # execute or print it
         exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(
             args.endyear), suffix, args.resultdir, args.execute)
@@ -172,13 +172,13 @@ def parse_input():
     """
 
     # get the default dates
-    defaults = get_default_date()
+    defaults=get_default_date()
 
     # show default date range
-    dflt_range = str(defaults['year']) + "/" + \
+    dflt_range=str(defaults['year']) + "/" + \
         str(defaults['month']) + "/1-" + str(defaults['day'])
 
-    parser = argparse.ArgumentParser(
+    parser=argparse.ArgumentParser(
         description='Simple tool to construct sacct command to output accounting data in a predefined format.\
             Default date range is: {}.'.format(dflt_range),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
@@ -217,7 +217,7 @@ def parse_input():
     parser.add_argument("-x", "--execute", help="execute constructed command",
                         action="store_true")
 
-    args = parser.parse_args()
+    args=parser.parse_args()
 
     # enable verbose logging if debug is enabled
     if args.debug:
@@ -229,15 +229,15 @@ def parse_input():
 
 def main():
     # parse input
-    args = parse_input()
+    args=parse_input()
 
     if args.business:
         # print("business")
         get_business_output(args)
     else:
         # get a command
-        sacct_cmd = get_sacct_cmd(args, int(args.startday), int(args.startmonth), int(args.startyear),
-                                  int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition)
+        sacct_cmd = get_sacct_cmd(args)
+
         # execute or print it
         exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(
             args.endyear), DEFAULT_SUFFIX, args.resultdir, args.execute)
