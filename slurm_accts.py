@@ -119,12 +119,12 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
         subprocess.call([command])
         try:
             output = subprocess.check_output(command, stderr=sys.stdout).decode()
+            logging.debug(output.decode())
         except subprocess.CalledProcessError as e:
             logging.error(e.output.decode())
     else:
         print(command)
 
-    logging.debug(output.decode())
 
 
 def get_business_output(args):
