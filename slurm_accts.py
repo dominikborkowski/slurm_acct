@@ -49,7 +49,7 @@ def get_default_date():
     return (default_date)
 
 
-def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields, partition):
+def get_sacct_cmd(args, sday, smonth, syear, eday, emonth, eyear, fields, partition):
     """Construct sacct command. If end day is > 28 then adjust to last day of that month.
     Arguments:
         sday {int} -- accounting start day of the month
@@ -84,15 +84,34 @@ def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields, partition):
     start_str = "-S {0}-{1}-{2}".format(syear, smonth, sday)
     end_str = "-E {0}-{1}-{2}T23:59:59".format(eyear, emonth, eday)
 
+    # do we have users?
+    if args.user:
+        user = "--user=" + args.user
+    else:
+        user = "-a"
+
+    # do we have clusters?
+    if args.cluster:
+        cluster = "--clusters=" + args.cluster
+    else:
+        cluster = "-L"
+
+    # do we have accounts?
+    if args.account:
+        account = "--accounts=" + args.account
+    else:
+        account = ""
+
     # do we have partitions?
-    if partition:
-        partition = "r " + partition
+    if args.partition:
+        partition = "--partition=" + args.partition
     else:
         partition = ""
 
     # final command
     command = (
-        "sacct -aLo {0} {1} {2} -XTp{3}".format(fields, start_str, end_str, partition))
+        "sacct -XTp {0} {1} {2} {3} {4} {5} -o {6}".format(user, cluster, account, start_str, end_str, partition, fields))
+    # command = command.strip()
     logging.debug("Command: {}".format(command))
     return (command)
 
@@ -118,13 +137,13 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
         command = shlex.split(command)
         subprocess.call([command])
         try:
-            output = subprocess.check_output(command, stderr=sys.stdout).decode()
+            output = subprocess.check_output(
+                command, stderr=sys.stdout).decode()
             logging.debug(output.decode())
         except subprocess.CalledProcessError as e:
             logging.error(e.output.decode())
     else:
         print(command)
-
 
 
 def get_business_output(args):
@@ -140,9 +159,10 @@ def get_business_output(args):
         suffix = BUSINESS_OUTPUT[key]
         # get a command
         sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
-            int(args.endday), int(args.endmonth), int(args.endyear), args.fields, partition)
+                                  int(args.endday), int(args.endmonth), int(args.endyear), args.fields, partition)
         # execute or print it
-        exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(args.endyear), suffix, args.resultdir, args.execute)
+        exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(
+            args.endyear), suffix, args.resultdir, args.execute)
 
 
 def parse_input():
@@ -176,8 +196,12 @@ def parse_input():
                         default=defaults['month'])
     parser.add_argument("-ey", "--endyear", help="accounting end year",
                         default=defaults['year'])
+    parser.add_argument('-a', '--account', help="limit query to specific account(s)",
+                        default=None)
     parser.add_argument("-b", "--business", help="business office setup",
                         action="store_true")
+    parser.add_argument('-c', '--cluster', help="limit query to specific cluster(s)",
+                        default=None)
     parser.add_argument("-d", "--debug", help="enable debug logging",
                         action="store_true")
     parser.add_argument("-f", "--fields", help="accounting fields",
@@ -188,6 +212,8 @@ def parse_input():
                         default=None)
     parser.add_argument('-r', '--resultdir', help="destination directory for results",
                         default=RESULT_DIR)
+    parser.add_argument('-u', '--user', help="limit query to specific user(s)",
+                        default=None)
     parser.add_argument("-x", "--execute", help="execute constructed command",
                         action="store_true")
 
@@ -210,7 +236,7 @@ def main():
         get_business_output(args)
     else:
         # get a command
-        sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
+        sacct_cmd = get_sacct_cmd(args, int(args.startday), int(args.startmonth), int(args.startyear),
                                   int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition)
         # execute or print it
         exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(
