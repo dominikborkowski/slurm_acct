@@ -40,6 +40,44 @@ def get_default_date():
     return (default_date)
 
 
+def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields,  partition, results):
+    """Construct sacct command
+    Returns:
+        string: full sacct command
+    """
+
+    # check if end date may not be the actual end of a given end month (28 or later)
+    # if not, adjust it
+    if eday >= 28 and eday != calendar.monthrange(eyear, emonth)[1]:
+        logging.debug("Auto adjusting end day from {}".format(eday))
+        eday = str(calendar.monthrange(eyear, emonth)[1]).zfill(2)
+        logging.debug("Auto adjusting end day to {}".format(eday))
+    else:
+        eday = str(eday).zfill(2)
+
+    # pad with zeros our start/end numbers
+    sday = str(sday).zfill(2)
+    smonth = str(smonth).zfill(2)
+    syear = str(syear).zfill(4)
+    emonth = str(smonth).zfill(2)
+    eyear = str(eyear).zfill(4)
+
+    # construct start and end fields
+    start_str = "-S {0}-{1}-{2}".format(syear, smonth, sday)
+    end_str = "-E {0}-{1}-{2}T23:59:59".format(eyear, emonth, eday)
+
+    # do we have partitions?
+    if partition:
+        partition = "r " + partition
+    else:
+        partition = ""
+
+    command = ("sacct -aLo {0} {1} {2} -XTp{3} &> {4}/{5}-{6}-HPC-slurm-all.txt".format(
+        fields, start_str, end_str, partition, results, eyear, emonth))
+
+    return (command)
+
+
 def parse_input():
     """Parse command line input to retrieve transfer options
     Returns:
@@ -58,7 +96,6 @@ def parse_input():
             Default date range is: {}.'.format(dflt_range),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-
 
     parser.add_argument("-sd", "--startday", help="accounting start day",
                         default=1)
@@ -99,67 +136,32 @@ def main():
     # parse input
     args = parse_input()
 
-    # check if end date may not be the actual end of a given end month (28 or later)
-    # if not, adjust it
-    if int(args.endday) >= 28 and int(args.endday) != calendar.monthrange(int(args.endyear), int(args.endmonth))[1]:
-        eday = str(calendar.monthrange(
-            int(args.endyear), int(args.endmonth))[1]).zfill(2)
-        logging.debug(
-            "Auto adjusting end day from {} to {}".format(args.endday, eday))
-    else:
-        eday = str(args.endday).zfill(2)
-
-    # pad with zeros our start/end numbers
-    sday = str(args.startday).zfill(2)
-    smonth = str(args.startmonth).zfill(2)
-    syear = str(args.startyear).zfill(4)
-    emonth = str(args.endmonth).zfill(2)
-    eyear = str(args.endyear).zfill(4)
-
-    # construct start and end fields
-    start_str = "-S {0}-{1}-{2}".format(syear, smonth, sday)
-    end_str = "-E {0}-{1}-{2}T23:59:59".format(eyear, emonth, eday)
-
-    # do we have partitions?
-    if args.partition:
-        partition = "r " + args.partition
-    else:
-        partition = ""
-
-    # # construct sacct account
-    sacct_cmd = ("echo sacct -aLo {0} {1} {2} -XTp{3} &> {4}/{5}-{6}-HPC-slurm-all.txt".format(
-        args.fields, start_str, end_str, partition, args.results, eyear, emonth))
-
-    # construct sacct account
-    # sacct_cmd = ("echo sacct -aLo {0} {1} {2} -XTp{3}".format(
-    #     args.fields, start_str, end_str, partition, args.results, eyear, emonth))
-    # construct sacct account
-    # sacct_cmd = ("ls -la")
+    # get a command
+    sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
+                              int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition, args.results)
 
     logging.debug("Command: {}".format(sacct_cmd))
-    # print sacct command
-    # print(sacct_cmd)
-
-    # if args.execute:
-    #     logging.debug("Executing: {}".format(sacct_cmd))
-    #     subprocess.call([sacct_cmd])
-    # else:
-    #     print("\n" + sacct_cmd + "\n")
 
     if args.execute:
         logging.debug("Executing: {}".format(sacct_cmd))
-        command = shlex.split(sacct_cmd)
         subprocess.call([sacct_cmd])
-        try:
-            # output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
-            output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
-            # success = True
-        except subprocess.CalledProcessError as e:
-            # output = e.output.decode()
-            logging.error(e.output.decode())
-            # success = False
     else:
         print("\n" + sacct_cmd + "\n")
+
+    # if args.execute:
+    #     logging.debug("Executing: {}".format(sacct_cmd))
+    #     command = shlex.split(sacct_cmd)
+    #     subprocess.call([sacct_cmd])
+    #     try:
+    #         # output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
+    #         output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
+    #         # success = True
+    #     except subprocess.CalledProcessError as e:
+    #         # output = e.output.decode()
+    #         logging.error(e.output.decode())
+    #         # success = False
+    # else:
+    #     print("\n" + sacct_cmd + "\n")
 
 
 # Execute main() function
