@@ -17,6 +17,14 @@ import shlex            # and because subprocess is stupid on python and takes o
 ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end"
 RESULT_DIR = "./logs"
 
+# business output: partitions + file suffixes
+BUSINESS_OUTPUT = {'pegasus_q,discovery_q,haswell_q': 'std',
+                   'smp_q':  'smp',
+                   'gpu_q': 'gpu',
+                   'orion_q': 'orion',
+                   None: ''
+                   }
+
 
 def get_default_date():
     """Provide default dates, for LAST month (from today)
@@ -82,7 +90,8 @@ def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields, partition):
         partition = ""
 
     # final command
-    command = ("sacct -aLo {0} {1} {2} -XTp{3}".format(fields, start_str, end_str, partition))
+    command = (
+        "sacct -aLo {0} {1} {2} -XTp{3}".format(fields, start_str, end_str, partition))
     logging.debug("Command: {}".format(command))
     return (command)
 
@@ -100,13 +109,16 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
     # construct command with stdout redirection
     emonth = str(emonth).zfill(2)
     eyear = str(eyear).zfill(4)
-    command = command + (" &> {0}/{1}-{2}-HPC-slurm-{3}.txt".format(resultdir,eyear,emonth,suffix))
+    command = command + \
+        (" &> {0}/{1}-{2}-HPC-slurm-{3}.txt".format(resultdir, eyear, emonth, suffix))
 
     if execute:
         logging.debug("Executing: {}".format(command))
         subprocess.call([command])
     else:
-        print("\n" + command + "\n")
+        # print("\n" + command + "\n")
+        print(command)
+
     # if args.execute:
     #     logging.debug("Executing: {}".format(sacct_cmd))
     #     command = shlex.split(sacct_cmd)
@@ -121,6 +133,24 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
     #         # success = False
     # else:
     #     print("\n" + sacct_cmd + "\n")
+
+
+def get_business_output(args):
+    """Get business output
+    Arguments:
+        args {reference} -- full arguments
+    """
+    # construct command with stdout redirection
+    logging.debug("Business output")
+
+    for key in BUSINESS_OUTPUT:
+        partition = key
+        suffix = BUSINESS_OUTPUT[key]
+        # get a command
+        sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
+            int(args.endday), int(args.endmonth), int(args.endyear), args.fields, partition)
+        # execute or print it
+        exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(args.endyear), suffix, args.resultdir, args.execute)
 
 
 def parse_input():
@@ -154,6 +184,8 @@ def parse_input():
                         default=defaults['month'])
     parser.add_argument("-ey", "--endyear", help="accounting end year",
                         default=defaults['year'])
+    parser.add_argument("-b", "--business", help="business office setup",
+                        action="store_true")
     parser.add_argument("-d", "--debug", help="enable debug logging",
                         action="store_true")
     parser.add_argument("-f", "--fields", help="accounting fields",
@@ -181,12 +213,16 @@ def main():
     # parse input
     args = parse_input()
 
-    # get a command
-    sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
-                              int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition)
-
-    # execute or print it
-    exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(args.endyear), "all", args.resultdir, args.execute)
+    if args.business:
+        # print("business")
+        get_business_output(args)
+    else:
+        # get a command
+        sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
+                                  int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition)
+        # execute or print it
+        exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(
+            args.endyear), "all", args.resultdir, args.execute)
 
 
 
