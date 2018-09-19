@@ -23,7 +23,7 @@ BUSINESS_OUTPUT = {'pegasus_q,discovery_q,haswell_q': 'std',
                    'smp_q':  'smp',
                    'gpu_q': 'gpu',
                    'orion_q': 'orion',
-                   None: ''
+                   None: 'all'
                    }
 
 
