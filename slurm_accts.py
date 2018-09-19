@@ -212,6 +212,8 @@ def parse_input():
                         default=None)
     parser.add_argument('-r', '--resultdir', help="destination directory for results",
                         default=RESULT_DIR)
+    parser.add_argument('-s', '--suffix', help="custom filename suffix",
+                        default=None)
     parser.add_argument('-u', '--user', help="limit query to specific user(s)",
                         default=None)
     parser.add_argument("-x", "--execute", help="execute constructed command",
@@ -238,9 +240,13 @@ def main():
         # get a command
         sacct_cmd = get_sacct_cmd(args)
 
+        if args.suffix:
+            suffix = args.suffix
+        else:
+            suffix = DEFAULT_SUFFIX
         # execute or print it
         exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(
-            args.endyear), DEFAULT_SUFFIX, args.resultdir, args.execute)
+            args.endyear), suffix, args.resultdir, args.execute)
 
 
 # Execute main() function
