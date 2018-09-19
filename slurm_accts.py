@@ -11,11 +11,12 @@ import calendar         # calendar and stuff
 import datetime         # get current dates/etc
 import subprocess       # because we want to execute shell commands
 import shlex            # and because subprocess is stupid on python and takes only arrays
+import os               # so we can create nice filepaths
 
 
 # some constants
 ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end"
-RESULT_DIR = "./logs"
+RESULT_DIR = "./results"
 DEFAULT_SUFFIX = "all"
 
 # business output: partitions + file suffixes
@@ -129,8 +130,8 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
     # construct command with stdout redirection
     emonth=str(emonth).zfill(2)
     eyear=str(eyear).zfill(4)
-    command=command + \
-        (" &> {0}/{1}-{2}-HPC-slurm-{3}.txt".format(resultdir, eyear, emonth, suffix))
+    filepath = os.path.join(resultdir, ("{0}-{1}-HPC-slurm-{2}.txt".format( eyear, emonth, suffix)))
+    command = command + " &> " + filepath
 
     if execute:
         logging.debug("Executing: {}".format(command))
