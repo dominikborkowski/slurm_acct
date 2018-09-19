@@ -115,25 +115,16 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
 
     if execute:
         logging.debug("Executing: {}".format(command))
+        command = shlex.split(command)
         subprocess.call([command])
+        try:
+            output = subprocess.check_output(command, stderr=sys.stdout).decode()
+        except subprocess.CalledProcessError as e:
+            logging.error(e.output.decode())
     else:
-        # print("\n" + command + "\n")
         print(command)
 
-    # if args.execute:
-    #     logging.debug("Executing: {}".format(sacct_cmd))
-    #     command = shlex.split(sacct_cmd)
-    #     subprocess.call([sacct_cmd])
-    #     try:
-    #         # output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
-    #         output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
-    #         # success = True
-    #     except subprocess.CalledProcessError as e:
-    #         # output = e.output.decode()
-    #         logging.error(e.output.decode())
-    #         # success = False
-    # else:
-    #     print("\n" + sacct_cmd + "\n")
+    logging.debug(output.decode())
 
 
 def get_business_output(args):
