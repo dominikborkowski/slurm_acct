@@ -15,7 +15,7 @@ import shlex            # and because subprocess is stupid on python and takes o
 
 # some constants
 ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end"
-RESULTS_DIR = "./logs"
+RESULT_DIR = "./logs"
 
 
 def get_default_date():
@@ -40,8 +40,17 @@ def get_default_date():
     return (default_date)
 
 
-def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields,  partition, results):
-    """Construct sacct command
+def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields, partition):
+    """Construct sacct command. If end day is > 28 then adjust to last day of that month.
+    Arguments:
+        sday {int} -- accounting start day of the month
+        smonth {int} -- accounting start month
+        syear {int} -- accounting start year
+        eday {int} -- accounting end day
+        emonth {int} -- accounting end month
+        eyear {int} -- accounting end year
+        fields {string} -- sacct fields
+        partition {string} -- list of partitions
     Returns:
         string: full sacct command
     """
@@ -59,7 +68,7 @@ def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields,  partition, 
     sday = str(sday).zfill(2)
     smonth = str(smonth).zfill(2)
     syear = str(syear).zfill(4)
-    emonth = str(smonth).zfill(2)
+    emonth = str(emonth).zfill(2)
     eyear = str(eyear).zfill(4)
 
     # construct start and end fields
@@ -72,10 +81,46 @@ def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields,  partition, 
     else:
         partition = ""
 
-    command = ("sacct -aLo {0} {1} {2} -XTp{3} &> {4}/{5}-{6}-HPC-slurm-all.txt".format(
-        fields, start_str, end_str, partition, results, eyear, emonth))
-
+    # final command
+    command = ("sacct -aLo {0} {1} {2} -XTp{3}".format(fields, start_str, end_str, partition))
+    logging.debug("Command: {}".format(sacct_cmd))
     return (command)
+
+
+def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
+    """Execute sacct command
+    Arguments:
+        command {string} -- full sacct command
+        eyear {int} -- accounting end year
+        resultdir {string} -- location of output file
+        execute {boolean} -- if set, execute. otherwise just print
+    Returns:
+        string: -- output of the command
+    """
+    # construct command with stdout redirection
+    emonth = str(emonth).zfill(2)
+    eyear = str(eyear).zfill(4)
+    command = command + (" &> {0}/{1}-{2}-HPC-slurm-{3}.txt".format(resultdir,eyear,emonth,suffix))
+
+    if execute:
+        logging.debug("Executing: {}".format(command))
+        subprocess.call([command])
+    else:
+        print("\n" + command + "\n")
+    # if args.execute:
+    #     logging.debug("Executing: {}".format(sacct_cmd))
+    #     command = shlex.split(sacct_cmd)
+    #     subprocess.call([sacct_cmd])
+    #     try:
+    #         # output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
+    #         output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
+    #         # success = True
+    #     except subprocess.CalledProcessError as e:
+    #         # output = e.output.decode()
+    #         logging.error(e.output.decode())
+    #         # success = False
+    # else:
+    #     print("\n" + sacct_cmd + "\n")
 
 
 def parse_input():
@@ -117,8 +162,8 @@ def parse_input():
                         default=sys.stdout)
     parser.add_argument('-p', '--partition', help="limit query to specific partition(s)",
                         default=None)
-    parser.add_argument('-r', '--results', help="destination directory for results",
-                        default=RESULTS_DIR)
+    parser.add_argument('-r', '--resultdir', help="destination directory for results",
+                        default=RESULT_DIR)
     parser.add_argument("-x", "--execute", help="execute constructed command",
                         action="store_true")
 
@@ -138,30 +183,11 @@ def main():
 
     # get a command
     sacct_cmd = get_sacct_cmd(int(args.startday), int(args.startmonth), int(args.startyear),
-                              int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition, args.results)
+                              int(args.endday), int(args.endmonth), int(args.endyear), args.fields, args.partition)
 
-    logging.debug("Command: {}".format(sacct_cmd))
+    # execute or print it
+    exec_sacct_cmd(sacct_cmd, int(args.endmonth), int(args.endyear), "all", args.resultdir, args.execute)
 
-    if args.execute:
-        logging.debug("Executing: {}".format(sacct_cmd))
-        subprocess.call([sacct_cmd])
-    else:
-        print("\n" + sacct_cmd + "\n")
-
-    # if args.execute:
-    #     logging.debug("Executing: {}".format(sacct_cmd))
-    #     command = shlex.split(sacct_cmd)
-    #     subprocess.call([sacct_cmd])
-    #     try:
-    #         # output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
-    #         output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
-    #         # success = True
-    #     except subprocess.CalledProcessError as e:
-    #         # output = e.output.decode()
-    #         logging.error(e.output.decode())
-    #         # success = False
-    # else:
-    #     print("\n" + sacct_cmd + "\n")
 
 
 # Execute main() function
