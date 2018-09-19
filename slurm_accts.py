@@ -21,12 +21,12 @@ def parse_input():
     """
 
     parser = argparse.ArgumentParser(
-        description='This is a simple wrapper for sacct to output accounting data in our predefined format.\
-            Use it to specify a given month.',
+        description='Simple tool to construct sacct command to output accounting data in our predefined format.\
+            Use it to automatically create time ranges.',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parser.add_argument("-v", "--verbose", help="increase output verbosity",
+    parser.add_argument("-d", "--debug", help="enable debug logging",
                         action="store_true")
     parser.add_argument("-sd", "--startday", help="accounting start day",
                         default=1 )
@@ -46,7 +46,7 @@ def parse_input():
     args = parser.parse_args()
 
     # enable verbose logging
-    if args.verbose:
+    if args.debug:
         logging.basicConfig(level=logging.DEBUG)
 
     # print(args.transfer_mode)
@@ -55,13 +55,25 @@ def parse_input():
 def main():
     # parse input
     args = parse_input()
+
+    # check if end date may not be the actual end of a given end month (28 or later)
+    # if not, adjust it
+    if int(args.endday) >= 28 and int(args.endday) != calendar.monthrange(int(args.endyear), int(args.endmonth))[1]:
+        eday = str(calendar.monthrange(
+            int(args.endyear), int(args.endmonth))[1]).zfill(2)
+        logging.debug("Auto adjusting end day from {} to {}".format(args.endday,eday))
+    else:
+        eday=str(args.endday).zfill(2)
+
+
     # pad with zeros our start/end numbers
     sday = str(args.startday).zfill(2)
     smonth = str(args.startmonth).zfill(2)
     syear = str(args.startyear).zfill(4)
-    eday = str(args.endday).zfill(2)
     emonth = str(args.endmonth).zfill(2)
     eyear = str(args.endyear).zfill(4)
+
+
 
     # construct start and end fields
     start_str = "-S {0}-{1}-{2}".format(syear,smonth,sday)
