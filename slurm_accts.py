@@ -16,11 +16,11 @@ ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elap
 
 
 def get_default_date():
-    """Provide default dates, for LAST month
+    """Provide default dates, for LAST month (from today)
     Returns:
         dictionary: year of that month, last month, last day of said month
     """
-    # initialize our defaults
+    # initialize our defaults, using current year and previous month
     default_date = {'year': datetime.date.today().year,
                     'month':  datetime.date.today().month - 1 or 12,
                     'day': None
@@ -43,16 +43,20 @@ def parse_input():
       reference - object with all the arguments as attributes
     """
 
-    parser =argparse.ArgumentParser(
-        description='Simple tool to construct sacct command to output accounting data in our predefined format.\
-            Use it to automatically create time ranges.',
+    # get the default dates
+    defaults = get_default_date()
+
+    # show default date range
+    dflt_range = str(defaults['year']) + "/" + \
+        str(defaults['month']) + "/1-" + str(defaults['day'])
+
+    parser = argparse.ArgumentParser(
+        description='Simple tool to construct sacct command to output accounting data in a predefined format.\
+            Default date range is: {}.'.format(dflt_range),
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    defaults=get_default_date()
 
-    parser.add_argument("-d", "--debug", help="enable debug logging",
-                        action="store_true")
     parser.add_argument("-sd", "--startday", help="accounting start day",
                         default=1)
     parser.add_argument("-sm", "--startmonth", help="accounting start month",
@@ -65,12 +69,18 @@ def parse_input():
                         default=defaults['month'])
     parser.add_argument("-ey", "--endyear", help="accounting end year",
                         default=defaults['year'])
+    parser.add_argument("-d", "--debug", help="enable debug logging",
+                        action="store_true")
+    parser.add_argument("-f", "--fields", help="accounting fields",
+                        default=ACCT_FIELDS)
     parser.add_argument('-o', '--output', type=argparse.FileType('w'),
                         default=sys.stdout)
+    parser.add_argument("-x", "--execute", help="execute constructed command",
+                        action="store_true")
 
     args = parser.parse_args()
 
-    # enable verbose logging
+    # enable verbose logging if debug is enabled
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
 
@@ -105,8 +115,9 @@ def main():
 
     # construct sacct account
     sacct_cmd = ("sacct -aLo {0} {1} {2} -XTp &> {3}-{4}-HPC-slurm-all.txt".format(
-        ACCT_FIELDS, start_str, end_str, eyear, emonth))
+        args.fields, start_str, end_str, eyear, emonth))
 
+    logging.debug("command: {}".format(sacct_cmd))
     # print sacct command
     print(sacct_cmd)
 
