@@ -75,6 +75,8 @@ def parse_input():
                         default=ACCT_FIELDS)
     parser.add_argument('-o', '--output', type=argparse.FileType('w'),
                         default=sys.stdout)
+    parser.add_argument('-p', '--partition', help="limit query to specific partition(s)",
+                        default=None)
     parser.add_argument("-x", "--execute", help="execute constructed command",
                         action="store_true")
 
@@ -113,9 +115,15 @@ def main():
     start_str = "-S {0}-{1}-{2}".format(syear, smonth, sday)
     end_str = "-E {0}-{1}-{2}T23:59:59".format(eyear, emonth, eday)
 
+    # do we have partitions?
+    if args.partition:
+        partition = "r " + args.partition
+    else:
+        partition = ""
+
     # construct sacct account
-    sacct_cmd = ("sacct -aLo {0} {1} {2} -XTp &> {3}-{4}-HPC-slurm-all.txt".format(
-        args.fields, start_str, end_str, eyear, emonth))
+    sacct_cmd = ("sacct -aLo {0} {1} {2} -XTp{3} &> {4}-{5}-HPC-slurm-all.txt".format(
+        args.fields, start_str, end_str, partition, eyear, emonth))
 
     logging.debug("command: {}".format(sacct_cmd))
     # print sacct command
