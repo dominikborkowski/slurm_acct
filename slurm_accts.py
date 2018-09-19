@@ -83,7 +83,7 @@ def get_sacct_cmd(sday, smonth, syear, eday, emonth, eyear, fields, partition):
 
     # final command
     command = ("sacct -aLo {0} {1} {2} -XTp{3}".format(fields, start_str, end_str, partition))
-    logging.debug("Command: {}".format(sacct_cmd))
+    logging.debug("Command: {}".format(command))
     return (command)
 
 
