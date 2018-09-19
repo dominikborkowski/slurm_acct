@@ -3,16 +3,19 @@
 #
 # originally written for python3, looks like it runs on python2 also
 #
-# imports
 import time             # calculate time
 import argparse         # parse command line arguments
 import logging          # use for normal and verbose modes, includes stdout/stderr
 import sys              # adds ability to exit the program
 import calendar         # calendar and stuff
 import datetime         # get current dates/etc
+import subprocess       # because we want to execute shell commands
+import shlex            # and because subprocess is stupid on python and takes only arrays
+
 
 # some constants
 ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end"
+RESULTS_DIR = "./logs"
 
 
 def get_default_date():
@@ -77,6 +80,8 @@ def parse_input():
                         default=sys.stdout)
     parser.add_argument('-p', '--partition', help="limit query to specific partition(s)",
                         default=None)
+    parser.add_argument('-r', '--results', help="destination directory for results",
+                        default=RESULTS_DIR)
     parser.add_argument("-x", "--execute", help="execute constructed command",
                         action="store_true")
 
@@ -121,13 +126,40 @@ def main():
     else:
         partition = ""
 
-    # construct sacct account
-    sacct_cmd = ("sacct -aLo {0} {1} {2} -XTp{3} &> {4}-{5}-HPC-slurm-all.txt".format(
-        args.fields, start_str, end_str, partition, eyear, emonth))
+    # # construct sacct account
+    sacct_cmd = ("echo sacct -aLo {0} {1} {2} -XTp{3} &> {4}/{5}-{6}-HPC-slurm-all.txt".format(
+        args.fields, start_str, end_str, partition, args.results, eyear, emonth))
 
-    logging.debug("command: {}".format(sacct_cmd))
+    # construct sacct account
+    # sacct_cmd = ("echo sacct -aLo {0} {1} {2} -XTp{3}".format(
+    #     args.fields, start_str, end_str, partition, args.results, eyear, emonth))
+    # construct sacct account
+    # sacct_cmd = ("ls -la")
+
+    logging.debug("Command: {}".format(sacct_cmd))
     # print sacct command
-    print(sacct_cmd)
+    # print(sacct_cmd)
+
+    # if args.execute:
+    #     logging.debug("Executing: {}".format(sacct_cmd))
+    #     subprocess.call([sacct_cmd])
+    # else:
+    #     print("\n" + sacct_cmd + "\n")
+
+    if args.execute:
+        logging.debug("Executing: {}".format(sacct_cmd))
+        command = shlex.split(sacct_cmd)
+        subprocess.call([sacct_cmd])
+        try:
+            # output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
+            output = subprocess.check_output(sacct_cmd, stderr=sys.stdout).decode()
+            # success = True
+        except subprocess.CalledProcessError as e:
+            # output = e.output.decode()
+            logging.error(e.output.decode())
+            # success = False
+    else:
+        print("\n" + sacct_cmd + "\n")
 
 
 # Execute main() function
