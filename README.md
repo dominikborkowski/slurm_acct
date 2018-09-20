@@ -6,6 +6,14 @@ Random scripts related to SLURM accounting
 
 Simple tool for constructing sacct command to run various accounting reports in the format expected by our business office. Current output is just a command, or set of them, which you have to execute manually on one of our clusters. Soon we'll have `--execute` option working.
 
+### Features
+
+* Defaults are calculated to produce last month's accounting
+* Defaults are shown in `--help`
+* Business office output
+* Automatically calculate last day of the month
+* Python 2.7 & 3 compatible, using commonly available modules
+
 
 ### Examples
 
