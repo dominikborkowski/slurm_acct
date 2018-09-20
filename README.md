@@ -7,20 +7,32 @@ Random scripts related to SLURM accounting
 Simple tool for constructing sacct command to run various accounting reports in the format expected by our business office. Current output is just a command, or set of them, which you have to execute manually on one of our clusters. Soon we'll have `--execute` option working.
 
 
-Examples:
+### Examples
 
 * Run last month's aggregate report for all users and clusters:
 
-```
- ./slurm_accts.py                                                                                                                                                                  
-```
-* output
-```
-sacct -XTp -a -L  -S 2018-08-31 -E 2018-08-31T23:59:59  -o JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end &> ./results/2018-08-HPC-slurm-all.txt
-```
+	```
+	 ./slurm_accts.py                                                                                                                                                                  
+	```
+   output:
 
+	```
+	sacct -XTp -a -L  -S 2018-08-31 -E 2018-08-31T23:59:59  -o JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end &> ./results/2018-08-HPC-slurm-all.txt
+	```
 
+* Run last month's aggregate report for all users and clusters, split into multiple files for business office:
 
+	```
+	./slurm_accts.py -b
+	```
+
+* Run reports from beginning of February until June 15th, and save them in a filename with 'custom' suffix
+
+	```
+	./slurm_accts.py -sm 2 -em 6 -ed 15 -s custom
+	```
+
+### full list of options
 
 ```
 usage: slurm_accts.py [-h] [-sd STARTDAY] [-sm STARTMONTH] [-sy STARTYEAR]
