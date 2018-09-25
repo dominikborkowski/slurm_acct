@@ -75,7 +75,7 @@ def get_sacct_cmd(args):
         eday=str(args.endday).zfill(2)
 
     # pad with zeros our start/end numbers
-    sday=str(args.endday).zfill(2)
+    sday=str(args.startday).zfill(2)
     smonth=str(args.startmonth).zfill(2)
     syear=str(args.startyear).zfill(4)
     emonth=str(args.endmonth).zfill(2)
