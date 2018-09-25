@@ -15,7 +15,7 @@ import os               # so we can create nice filepaths
 
 
 # some constants
-ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end"
+ACCT_FIELDS = "JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end,CPUTimeRAW"
 RESULT_DIR = "./results"
 DEFAULT_SUFFIX = "all"
 
