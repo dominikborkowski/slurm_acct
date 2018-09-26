@@ -111,7 +111,7 @@ def get_sacct_cmd(args):
 
     # final command
     command=(
-        "sacct -XTp {0} {1} {2} {3} {4} {5} -o {6}".format(user, cluster, account, start_str, end_str, partition, args.fields))
+        "-XTp {0} {1} {2} {3} {4} {5} -o {6}".format(user, cluster, account, start_str, end_str, partition, args.fields))
     # command = command.strip()
     logging.debug("Command: {}".format(command))
     return (command)
@@ -134,9 +134,9 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
     command = command + " &> " + filepath
 
     if execute:
-        logging.debug("Executing: {}".format(command))
         command=shlex.split(command)
-        subprocess.call([command])
+        command.insert(0, "sacct")
+        subprocess.check_call(command)
         try:
             output=subprocess.check_output(
                 command, stderr=sys.stdout).decode()
