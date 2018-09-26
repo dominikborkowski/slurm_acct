@@ -131,21 +131,35 @@ def exec_sacct_cmd(command, emonth, eyear, suffix, resultdir, execute):
     emonth=str(emonth).zfill(2)
     eyear=str(eyear).zfill(4)
     filepath = os.path.join(resultdir, ("{0}-{1}-HPC-slurm-{2}.txt".format( eyear, emonth, suffix)))
-    command = command + " &> " + filepath
+    # command = command + " &> " + filepath
 
     if execute:
+        # split our string into a list
         command=shlex.split(command)
+        # insert 'sacct'
         command.insert(0, "sacct")
-        subprocess.check_call(command)
         try:
             output=subprocess.check_output(
                 command, stderr=sys.stdout).decode()
             logging.debug(output.decode())
+            # write to a file
+            write_to_file(output,filepath)
         except subprocess.CalledProcessError as e:
             logging.error(e.output.decode())
     else:
         print(command)
 
+def write_to_file(input,filepath):
+    """Write contents to a file
+    Arguments:
+        input {string} -- what we're writing to a file
+        filepath {string} -- full path to a destination file
+    """
+    lines = input.count('\n')
+    file = open(filepath, "w")
+    file.write(input)
+    file.close()
+    print("Wrote {} lines to {}".format(lines,filepath))
 
 def get_business_output(args):
     """Get business output
