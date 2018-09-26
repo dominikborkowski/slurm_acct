@@ -4,20 +4,21 @@ Random scripts related to SLURM accounting
 
 ## slurm_acct.py
 
-Simple tool for constructing sacct command to run various accounting reports in the format expected by our business office. Current output is just a command, or set of them, which you have to execute manually on one of our clusters. Soon we'll have `--execute` option working.
+Simple tool for constructing sacct command to run various accounting reports in the format expected by our business office. Current output is just a command, or set of them, which you have to execute manually on one of our clusters. 
 
 ### Features
 
 * Defaults are calculated to produce last month's accounting
 * Defaults are shown in `--help`
-* Business office output
+* Business office output (uses specific queue & filename combinations)
 * Automatically calculate last day of the month
+* Execute constructed commands
 * Python 2.7 & 3 compatible, using commonly available modules
 
 
 ### Examples
 
-* Run last month's aggregate report for all users and clusters:
+* Show how to run last month's aggregate report for all users and clusters:
 
 	```
 	 ./slurm_accts.py                                                                                                                                                                  
@@ -25,19 +26,19 @@ Simple tool for constructing sacct command to run various accounting reports in 
    output:
 
 	```
-	sacct -XTp -a -L  -S 2018-08-31 -E 2018-08-31T23:59:59  -o JobID,User,Account,cluster,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,start,end &> ./results/2018-08-HPC-slurm-all.txt
+	sacct -XTp -a -L  -S 2018-08-01 -E 2018-08-31T23:59:59  -o JobID,User,Account,cluster,Partition,NodeList,NNodes,AllocCPUS,start,end,CPUTime,CPUTimeRAW,Elapsed,ElapsedRaw > ./results/2018-08-HPC-slurm-all.txt
 	```
 
 * Run last month's aggregate report for all users and clusters, split into multiple files for business office:
 
 	```
-	./slurm_accts.py -b
+	./slurm_accts.py -b -x
 	```
 
 * Run reports from beginning of February until June 15th, and save them in a filename with 'custom' suffix
 
 	```
-	./slurm_accts.py -sm 2 -em 6 -ed 15 -s custom
+	./slurm_accts.py -sm 2 -em 6 -ed 15 -s custom -x
 	```
 
 ### full list of options
@@ -73,8 +74,8 @@ optional arguments:
   -d, --debug           enable debug logging (default: False)
   -f FIELDS, --fields FIELDS
                         accounting fields (default: JobID,User,Account,cluster
-                        ,CPUTime,NNodes,NodeList,Partition,Elapsed,AllocCPUS,s
-                        tart,end)
+                        ,Partition,NodeList,NNodes,AllocCPUS,start,end,CPUTime
+                        ,CPUTimeRAW,Elapsed,ElapsedRaw)
   -o OUTPUT, --output OUTPUT
   -p PARTITION, --partition PARTITION
                         limit query to specific partition(s) (default: None)
