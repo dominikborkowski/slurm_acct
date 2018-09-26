@@ -1,10 +1,11 @@
 # slurm_acct
 
-Random scripts related to SLURM accounting
+SLURM sacct constructor
 
 ## slurm_acct.py
 
-Simple tool for constructing sacct command to run various accounting reports in the format expected by our business office. Current output is just a command, or set of them, which you have to execute manually on one of our clusters. 
+Simple tool for constructing sacct command to run various accounting reports in the format expected by our business office. Its main goal is to calculate the last day of a given month, and automating the task of running reports for a previous month.
+
 
 ### Features
 
@@ -40,8 +41,14 @@ Simple tool for constructing sacct command to run various accounting reports in 
 	```
 	./slurm_accts.py -sm 2 -em 6 -ed 15 -s custom -x
 	```
+### Defaults
 
-### full list of options
+`slurm_acct` defaults to the following:
+
+* time range is first day through last day of a previous month
+* there is no limit to which clusters, partitions or users areused
+
+### Command line arguments
 
 ```
 usage: slurm_accts.py [-h] [-sd STARTDAY] [-sm STARTMONTH] [-sy STARTYEAR]
@@ -85,4 +92,18 @@ optional arguments:
                         custom filename suffix (default: all)
   -u USER, --user USER  limit query to specific user(s) (default: None)
   -x, --execute         execute constructed command (default: False)
+```
+
+### Defining custom business report
+
+For the purpose of our business office we have to filter sacct based on combinations of various partitions and save them to various files. This is stored as a key/value dictionary inside the script. In this example we have `gpu_q` partition being saved to a file with 'gpu' in its name, while all three `pegasus_q`, `discovery_q` and `haswell_q` get stored in a file with 'std' suffix.
+
+```
+# business output: partitions + file suffixes
+BUSINESS_OUTPUT = {'pegasus_q,discovery_q,haswell_q': 'std',
+                   'smp_q':  'smp',
+                   'gpu_q': 'gpu',
+                   'orion_q': 'orion',
+                   None: 'all'
+                   }
 ```
