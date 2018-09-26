@@ -176,7 +176,7 @@ def get_business_output(args):
     logging.debug("Business output")
 
     for key in BUSINESS_OUTPUT:
-        partition = key
+        args.partition = key
         suffix = BUSINESS_OUTPUT[key]
         # get a command
         sacct_cmd = get_sacct_cmd(args)
